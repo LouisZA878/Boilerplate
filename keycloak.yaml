@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin 
+    networks:
+      - keycloak_network
+
+  keycloak:
+    image: keycloak/keycloak:23.0.7
+    command:
+      - start
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres/keycloak
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: admin
+      KC_HTTPS_PORT: 8663
+      KC_HOSTNAME: 10.0.0.6
+      KC_HTTPS_CERTIFICATE_FILE: ./certs/cert.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: ./certs/key.pem
+      KC_METRICS_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KC_HTTP_METRICS_HISTOGRAMS_ENABLED: true
+      KC_CACHE_METRICS_HISTOGRAMS_ENABLED: true
+    volumes:
+      - ./certs:/certs
+    ports:
+      - 8663:8663
+    restart: always
+    depends_on:
+      - postgres
+    networks:
+      - keycloak_network
+
+# services:
+#   postgres_db:
+#     image: postgres:16
+#     restart: always
+#     volumes:
+#       - /srv/keycloak/data/postgres16:/var/lib/postgresql/data
+#     environment:
+#       POSTGRES_DB: keycloak
+#       POSTGRES_USER: admin
+#       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#     networks:
+#       - keycloak_network
+
+#   keycloak:
+#     # build: .
+#     restart: on-failure:5
+#     image: quay.io/keycloak/keycloak:25.0.1
+#     environment:
+#       KC_LOG_LEVEL: debug
+#       KC_DB: postgres
+#       KC_DB_URL: 'jdbc:postgresql://postgres_db/keycloak'
+#       KC_DB_USERNAME: admin
+#       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+#       KC_DB_SCHEMA: public
+#       KC_HOSTNAME: ${KC_HOSTNAME}
+#       KC_HTTPS_PORT: 8663
+#       # KC_HTTP_ENABLED: true
+#       HTTP_ADDRESS_FORWARDING: true
+#       KC_HTTPS_CERTIFICATE_FILE: ./certs/cert.pem
+#       KC_HTTPS_CERTIFICATE_KEY_FILE: ./certs/key.pem
+#       KEYCLOAK_ADMIN: admin
+#       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+#     ports:
+#       # - '8080:8080'
+#       - 8663:8663
+#     volumes:
+#       - ./certs:/certs
+#     depends_on:
+#       - postgres_db
+#     command:
+#       - start
+#     networks:
+#       - keycloak_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  keycloak_network:
+    driver: bridge
